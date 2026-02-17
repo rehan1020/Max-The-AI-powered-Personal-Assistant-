@@ -1,0 +1,12 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+dist/
+build/
+*.egg-info/
+*.db
+*.log
+chrome-debug-profile/
+*.onnx
+models/
