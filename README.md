@@ -410,3 +410,4 @@ RECORDING_MAX_SECONDS = 60  # default is 30
 ## License
 
 Personal use project. Not affiliated with OpenRouter, Google, or Microsoft.
+Under Devlopment, updates will be made, Open for suggestions.
