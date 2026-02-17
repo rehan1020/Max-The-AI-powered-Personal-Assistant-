@@ -1,6 +1,6 @@
 # 🧠 MAX — AI Voice-Controlled Windows Desktop Agent
 
-Max is a controlled AI-powered Windows orchestration engine with a voice interface. It listens for the wake word **"Max"**, converts voice commands into structured action plans via OpenRouter, validates them for safety, and executes them on your real desktop — browser, files, apps, and system controls.
+Max is a full-featured AI-powered Windows orchestration engine with a voice interface. It listens for the wake word **"Max"**, converts voice commands into structured action plans using your choice of **local Ollama or cloud OpenRouter LLMs**, validates them for safety, and executes them on your real desktop — browser automation, file management, system control, and more.
 
 ---
 
@@ -8,7 +8,8 @@ Max is a controlled AI-powered Windows orchestration engine with a voice interfa
 
 - **Wake word activation** — say "Max" to trigger
 - **Speech-to-text** — local transcription via faster-whisper (GPU-accelerated)
-- **AI task planning** — natural language → structured JSON plans via OpenRouter
+- **Flexible LLM support** — run locally with Ollama (open-source) or use OpenRouter cloud (multiple models). Includes automatic fallback: if primary fails, switches to secondary provider seamlessly
+- **AI task planning** — natural language → structured JSON plans
 - **Browser automation** — controls your real Chrome (visible, with your cookies/sessions)
 - **Mouse & keyboard** — full desktop control via PyAutoGUI
 - **File management** — create, move, delete files (with protection)
@@ -29,7 +30,9 @@ Max is a controlled AI-powered Windows orchestration engine with a voice interfa
 - **Google Chrome** installed
 - **Microphone** for voice input
 - **Speakers** for TTS responses
-- **OpenRouter API key** (free tier works)
+- **LLM configuration** (choose one or both):
+  - **OpenRouter API key** ([free tier works](https://openrouter.ai/keys)) for cloud-based LLMs
+  - **Ollama** ([ollama.ai](https://ollama.ai)) for local, privacy-first LLM execution
 
 ---
 
@@ -75,22 +78,35 @@ playwright install chromium
 Edit the `.env` file in the project root:
 
 ```env
+# LLM Provider Configuration
+LLM_PROVIDER=auto
 OPENROUTER_API_KEY=sk-or-v1-your-key-here
 OPENROUTER_MODEL=google/gemini-2.0-flash-exp:free
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=phi3:mini
+
+# Browser & Chrome
 CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe
 CHROME_DEBUG_PORT=9222
 CHROME_USER_DATA=C:\chrome-debug-profile
+
+# Speech & Audio
 WHISPER_MODEL=small
 WHISPER_DEVICE=cuda
 TTS_VOICE_GENDER=male
 WAKE_WORD=max
+
+# Logging
 LOG_LEVEL=INFO
 ```
 
 | Variable | Description |
 |---|---|
-| `OPENROUTER_API_KEY` | Your OpenRouter API key ([get one free](https://openrouter.ai/keys)) |
+| `LLM_PROVIDER` | `"local"` (Ollama only), `"cloud"` (OpenRouter only), or `"auto"` (try Ollama first, fall back to OpenRouter) |
+| `OPENROUTER_API_KEY` | Your OpenRouter API key ([get one free](https://openrouter.ai/keys)) — required if using OpenRouter |
 | `OPENROUTER_MODEL` | AI model to use (free tier: `google/gemini-2.0-flash-exp:free`) |
+| `OLLAMA_BASE_URL` | Ollama server URL (default: `http://localhost:11434`) |
+| `OLLAMA_MODEL` | Local model to use (default: `phi3:mini`) |
 | `CHROME_PATH` | Path to your Chrome executable |
 | `CHROME_DEBUG_PORT` | Port for Chrome remote debugging (default: 9222) |
 | `CHROME_USER_DATA` | Folder for Chrome debug profile (keeps sessions separate) |
@@ -150,7 +166,10 @@ cd C:\Users\30reh\Downloads\voice
         ↓
 [Intent Router]
         ↓
-[AI Task Planner]  ←  OpenRouter API (free tier)
+[AI Task Planner]  ←  LLM Provider (multi-provider system)
+                      ├─ Ollama (local: phi3:mini, llama2, etc.)
+                      └─ OpenRouter (cloud: gemini, claude, llama, etc.)
+                          with automatic fallback if primary fails
         ↓
 [Structured JSON Plan]
         ↓
@@ -171,7 +190,7 @@ cd C:\Users\30reh\Downloads\voice
 
 ```
 voice/
-├── .env                          # API keys & config
+├── .env                          # API keys & config (LLM provider settings)
 ├── .gitignore
 ├── requirements.txt
 ├── config.py                     # Central configuration
@@ -184,9 +203,12 @@ voice/
 │   │   ├── stt.py                # Speech-to-text (Whisper)
 │   │   └── tts.py                # Text-to-speech (pyttsx3)
 │   ├── ai/
+│   │   ├── provider_factory.py   # Multi-provider LLM system with fallback
+│   │   ├── llm_provider.py       # Base LLM interface
+│   │   ├── openrouter.py         # OpenRouter API client
+│   │   ├── ollama_provider.py    # Ollama local LLM client
 │   │   ├── prompt.py             # System prompt + context builder
-│   │   ├── schema.py             # JSON plan validation
-│   │   └── openrouter.py         # OpenRouter API client
+│   │   └── schema.py             # JSON plan validation
 │   ├── safety/
 │   │   └── validator.py          # Action classification + protection
 │   ├── execution/
@@ -309,6 +331,51 @@ Then place the `.exe` shortcut in `shell:startup`.
 ---
 
 ## Configuration Tips
+
+### Use Ollama for local, private LLM execution
+
+Ollama lets you run models locally without internet or API keys:
+
+1. **Install Ollama** from [ollama.ai](https://ollama.ai)
+2. **Start Ollama server**:
+   ```bash
+   ollama serve
+   ```
+3. **Pull a model** (in another terminal):
+   ```bash
+   ollama pull phi3:mini    # lightweight, fast
+   ollama pull llama2       # more capable but slower
+   ollama pull mistral      # good balance of speed/quality
+   ```
+4. **Configure .env**:
+   ```env
+   LLM_PROVIDER=local
+   OLLAMA_BASE_URL=http://localhost:11434
+   OLLAMA_MODEL=phi3:mini
+   ```
+
+### Use OpenRouter for cloud-based LLMs
+
+For better quality, use cloud models:
+
+1. **Get API key** from [openrouter.ai/keys](https://openrouter.ai/keys) (free tier available)
+2. **Configure .env**:
+   ```env
+   LLM_PROVIDER=cloud
+   OPENROUTER_API_KEY=sk-or-v1-your-key-here
+   OPENROUTER_MODEL=google/gemini-2.0-flash-exp:free
+   ```
+
+### Automatic fallback between providers
+
+For best reliability, use `auto` mode — tries Ollama first, falls back to OpenRouter if unavailable:
+
+```env
+LLM_PROVIDER=auto
+OPENROUTER_API_KEY=sk-or-v1-your-key-here
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=phi3:mini
+```
 
 ### Use a faster/smaller Whisper model
 
