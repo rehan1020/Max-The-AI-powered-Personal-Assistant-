@@ -142,93 +142,118 @@ cd C:\Users\30reh\Downloads\voice
 
 | Say this | What Max does |
 |---|---|
-| "Max, open Chrome" | Launches Chrome with remote debugging |
-| "Max, go to YouTube" | Navigates to youtube.com |
-| "Max, search for Python tutorials" | Opens Google search |
-| "Max, open Notepad" | Launches Notepad |
-| "Max, set volume to 50" | Sets system volume to 50% |
-| "Max, set brightness to 80" | Sets screen brightness to 80% |
-| "Max, create a file called notes.txt on my desktop" | Creates the file |
-| "Max, delete the file test.txt on my desktop" | Deletes (with confirmation) |
-| "Max, install VS Code" | Installs via winget (with confirmation) |
-| "Max, close Chrome" | Terminates Chrome |
-| "Max, read the screen" | OCR captures visible text |
-| "Max, what's on my screen" | Takes screenshot for summarization |
+| "Max, open Chrome" | Launches Chrome (safe) |
+| "Max, go to YouTube" | Navigates to youtube.com (safe) |
+| "Max, search for Python tutorials" | Opens Google search (safe) |
+| "Max, open Notepad" | Launches Notepad (safe) |
+| "Max, click Play" | Clicks element with "Play" text (safe) |
+| "Max, type hello world" | Types text (safe) |
+| "Max, set volume to 50" | Sets system volume (dangerous, needs confirmation) |
+| "Max, set brightness to 80" | Sets screen brightness (dangerous, needs confirmation) |
+| "Max, create a file called notes.txt" | Creates a text file (safe) |
+| "Max, delete the file test.txt" | Deletes file (dangerous, needs confirmation) |
+| "Max, install VS Code" | Installs via winget (dangerous, needs confirmation) |
+| "Max, close Chrome" | Terminates Chrome (safe) |
+| "Max, read the screen" | Captures + OCRs visible text (safe) |
+| "Max, what's on my screen" | Takes screenshot for summarization (safe) |
+| "Max, lock the screen" | Locks Windows (system control) |
+| "Max, sleep" | Puts system to sleep (system control) |
+| "Max, turn WiFi off" | Toggles WiFi (system control) |
+| "Max, mute" | Mutes audio (system control) |
 
 ---
 
 ## Architecture
 
 ```
-[Hotword Engine]  ←  openwakeword or Whisper-tiny fallback
-        ↓
-[Speech-to-Text]  ←  faster-whisper (GPU)
-        ↓
-[Intent Router]
-        ↓
-[AI Task Planner]  ←  LLM Provider (multi-provider system)
-                      ├─ Ollama (local: phi3:mini, llama2, etc.)
-                      └─ OpenRouter (cloud: gemini, claude, llama, etc.)
-                          with automatic fallback if primary fails
-        ↓
-[Structured JSON Plan]
-        ↓
-[Safety Validator]  ←  classifies safe / dangerous / blocked
-        ↓
-[Confirmation Dialog]  ←  PyQt6 popup (if dangerous)
-        ↓
-[Execution Engine]  ←  dispatches to handlers
-        ↓
-[System / Browser Control]
-        ↓
-[Voice Response]  ←  pyttsx3 TTS
-        ↓
-[Memory Storage]  ←  SQLite database
+User Command
+    ↓
+[1] Rule-Based Parser (fast, deterministic, safe)
+    ↓
+  Rule match? → Direct execution
+  ↓
+  No rule? → Check if simple-only mode
+    ↓
+  NO → Continue to LLM
+    ↓
+[2] LLM Task Planner  ←  Multi-provider LLM
+                         ├─ Ollama (local)
+                         └─ OpenRouter (cloud)
+    ↓
+[3] JSON Plan Validator
+    ↓
+[4] Safety Classifier (allowed/dangerous/blocked)
+    ↓
+[5] User Confirmation (if needed)
+    ↓
+[6] Action Dispatcher
+    ↓
+[7] Execution Handlers
+    ↓
+[8] Voice Response + Memory
 ```
+
+### Key Improvements
+
+- **Rule-Based Parser** (`core/ai/rule_parser.py`) — Fast, deterministic handling of common commands without LLM overhead
+- **Plan Validator** (`core/ai/plan_validator.py`) — Validates action schemas and detects complexity
+- **Safety Architecture** — See [SAFETY_ARCHITECTURE.md](SAFETY_ARCHITECTURE.md) for detailed safety layers
+- **Multi-Provider LLM** — Automatic fallback between Ollama (local) and OpenRouter (cloud)
+- **Action Dispatcher** — Thread-safe execution with async support for browser operations
 
 ### Project Structure
 
 ```
 voice/
-├── .env                          # API keys & config (LLM provider settings)
+├── .env                          # Configuration (copy from .env.example)
+├── .env.example                  # Example configuration template
 ├── .gitignore
 ├── requirements.txt
+├── README.md                     # This file
+├── COMMANDS.md                   # Voice command examples
+├── IMPROVEMENTS.md               # Recent improvements & features
+├── SAFETY_ARCHITECTURE.md        # Safety layer documentation
 ├── config.py                     # Central configuration
 ├── main.py                       # Entry point
 ├── core/
 │   ├── orchestrator.py           # Main pipeline coordinator
 │   ├── voice/
-│   │   ├── audio_capture.py      # Mic input + VAD
-│   │   ├── hotword.py            # Wake word detection
-│   │   ├── stt.py                # Speech-to-text (Whisper)
+│   │   ├── audio_capture.py      # Mic input + VAD (webrtcvad or energy-based)
+│   │   ├── hotword.py            # Wake word detection (openwakeword)
+│   │   ├── stt.py                # Speech-to-text (faster-whisper, GPU-accelerated)
 │   │   └── tts.py                # Text-to-speech (pyttsx3)
 │   ├── ai/
 │   │   ├── provider_factory.py   # Multi-provider LLM system with fallback
 │   │   ├── llm_provider.py       # Base LLM interface
-│   │   ├── openrouter.py         # OpenRouter API client
-│   │   ├── ollama_provider.py    # Ollama local LLM client
+│   │   ├── openrouter.py         # OpenRouter API client (cloud)
+│   │   ├── ollama_provider.py    # Ollama client (local)
+│   │   ├── rule_parser.py        # Rule-based command parser (fast path)
+│   │   ├── plan_validator.py     # JSON plan validation + complexity checking
 │   │   ├── prompt.py             # System prompt + context builder
-│   │   └── schema.py             # JSON plan validation
+│   │   └── schema.py             # Original JSON schema validator
 │   ├── safety/
 │   │   └── validator.py          # Action classification + protection
 │   ├── execution/
-│   │   ├── browser_control.py    # Playwright + Chrome CDP
+│   │   ├── dispatcher.py         # Action execution engine
+│   │   ├── browser_control.py    # Playwright + Chrome CDP automation
 │   │   ├── mouse_keyboard.py     # PyAutoGUI desktop control
-│   │   ├── file_manager.py       # Safe file operations
-│   │   ├── system_control.py     # Volume, brightness, apps, installs
-│   │   ├── screen_reader.py      # Screenshots + EasyOCR
-│   │   └── dispatcher.py         # Action → handler mapping
+│   │   ├── file_manager.py       # Safe file operations (protected paths)
+│   │   ├── system_control.py     # Volume, brightness, apps, installs, WiFi, etc.
+│   │   └── screen_reader.py      # Screenshots + EasyOCR text extraction
 │   └── memory/
-│       └── database.py           # SQLite conversations + preferences
+│       └── database.py           # SQLite conversations + user preferences
 ├── gui/
-│   ├── styles.py                 # Dark theme stylesheet
-│   ├── widgets.py                # Custom UI panels
-│   └── main_window.py            # PyQt6 main window
+│   ├── main_window.py            # PyQt6 main application window
+│   ├── widgets.py                # Custom UI components
+│   └── styles.py                 # Dark theme stylesheet
 ├── startup/
 │   └── install_startup.py        # Windows auto-start installer
-├── data/                         # SQLite database (auto-created)
-├── logs/                         # Log files (auto-created)
-└── models/                       # Wake word models (optional)
+├── test_llm_commands.py          # Test LLM provider integration
+├── test_subsystems.py            # Test individual subsystems
+├── test_safety_features.py       # Test safety validators
+├── data/                         # SQLite database directory (auto-created)
+├── logs/                         # Log files directory (auto-created)
+└── models/                       # Voice/hotword models (optional)
 ```
 
 ---
@@ -241,29 +266,43 @@ Max understands the following action types. The AI planner converts natural lang
 
 | Action | Parameters | Description |
 |---|---|---|
-| `open_app` | `name` | Open an application |
+| `open_app` | `name` | Open an application (e.g., "Notepad", "VS Code") |
 | `close_app` | `name` | Close an application |
-| `open_browser` | `browser` | Launch Chrome |
-| `navigate` | `url` | Go to a URL |
-| `click` | `x, y` / `selector` / `text` | Click element or coordinates |
-| `type_text` | `text` | Type text |
-| `move_mouse` | `x, y` | Move cursor |
-| `file_create` | `path, content` | Create a file |
-| `summarize_screen` | — | Capture screenshot |
-| `read_screen` | `region` | OCR the screen |
-| `search_web` | `query` | Google search |
-| `wait` | `seconds, message` | Pause execution |
+| `open_browser` | `browser` | Launch Chrome (or other configured browser) |
+| `navigate` | `url` | Navigate to a URL |
+| `search_web` | `query` | Perform a Google search |
+| `click` | `x, y` or `text` or `selector` | Click element by coordinates, visible text, or CSS selector |
+| `type_text` | `text` | Type text into focused element |
+| `move_mouse` | `x, y` | Move cursor to coordinates |
+| `file_create` | `path, content` | Create a file with optional content |
+| `read_screen` | `region` (optional) | OCR the screen or region |
+| `summarize_screen` | — | Take screenshot and describe contents |
+| `wait` | `seconds, message` | Pause execution (for timing-dependent actions) |
 
 ### Dangerous Actions (confirmation required in Safe Mode)
 
 | Action | Parameters | Description |
 |---|---|---|
 | `file_delete` | `path` | Delete a file or folder |
-| `file_move` | `source, destination` | Move/rename a file |
-| `install_software` | `name, method, package_id` | Install via winget/choco |
-| `system_volume` | `level` / `action` | Change volume or mute |
-| `system_brightness` | `level` | Change brightness |
-| `press_key` | `key` | Press key combo (can be destructive) |
+| `file_move` | `source, destination` | Move/rename a file or folder |
+| `install_software` | `name, method, package_id` | Install via winget or chocolatey |
+| `system_volume` | `level` (0-100) | Set volume level |
+| `system_brightness` | `level` (0-100) | Set screen brightness |
+| `press_key` | `key` | Press key combination (can be destructive) |
+
+### System Control Actions (toggles & switches)
+
+| Action | Parameters | Description |
+|---|---|---|
+| `system_sleep` | — | Put system to sleep |
+| `system_lock` | — | Lock Windows screen |
+| `system_shutdown` | `seconds` (optional) | Shutdown PC (default: 60 seconds) |
+| `system_restart` | `seconds` (optional) | Restart PC (default: 60 seconds) |
+| `system_wifi` | `action` ("on", "off", "toggle") | Control WiFi |
+| `system_bluetooth` | `action` ("on", "off", "toggle") | Control Bluetooth |
+| `system_screensaver` | `action` ("start", "stop") | Control screensaver |
+| `system_mute` | — | Mute audio |
+| `system_unmute` | — | Unmute audio |
 
 ---
 

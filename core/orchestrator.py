@@ -20,6 +20,8 @@ from core.voice.hotword import HotwordDetector
 from core.voice.stt import SpeechToText
 from core.voice.tts import TextToSpeech
 from core.ai.provider_factory import create_llm_provider
+from core.ai.rule_parser import parse_simple_command
+from core.ai.plan_validator import PlanValidator, requires_confirmation
 from core.ai.schema import plan_to_json
 from core.safety.validator import SafetyValidator
 from core.execution.dispatcher import ActionDispatcher
@@ -47,6 +49,10 @@ class Orchestrator:
         self.safety = SafetyValidator()
         self.dispatcher = ActionDispatcher()
         self.memory = MemoryDatabase()
+        
+        # Plan validation & safety
+        self.validator = PlanValidator(strict_mode=config.REJECT_COMPLEX_PLANS)
+        logger.info(f"Safety mode: SIMPLE_ONLY={config.SIMPLE_COMMANDS_ONLY}, REJECT_COMPLEX={config.REJECT_COMPLEX_PLANS}")
 
         logger.info("All subsystems initialized")
 
@@ -118,19 +124,48 @@ class Orchestrator:
                 command = self.hotword.extract_command(text)
                 self._log(command, "user")
 
-                # Phase 4: Get AI plan
-                self._set_status("processing", "Thinking...")
-                recent = self.memory.get_recent_conversations(limit=5)
-                plan = self.ai.plan(command, recent)
-
+                # Phase 4: Try rule-based parser first (fast, safe, deterministic)
+                self._set_status("processing", "Parsing...")
+                plan = parse_simple_command(command)
+                
                 if plan is None:
-                    self._log("Failed to generate action plan.", "system")
-                    self.tts.speak_async("Sorry, I couldn't understand that command.")
-                    self.memory.save_conversation(command, None, "Plan generation failed", False)
-                    continue
+                    # No simple rule matched — try LLM for complex commands
+                    if config.SIMPLE_COMMANDS_ONLY:
+                        self._log("Complex command rejected (SIMPLE_COMMANDS_ONLY=true).", "system")
+                        self.tts.speak_async("That's too complex. I can only handle simple commands.")
+                        self.memory.save_conversation(command, None, "Rejected: complex command", False)
+                        continue
+                    
+                    self._set_status("processing", "Thinking...")
+                    recent = self.memory.get_recent_conversations(limit=5)
+                    plan = self.ai.plan(command, recent)
+                    
+                    if plan is None:
+                        self._log("Failed to generate action plan.", "system")
+                        self.tts.speak_async("Sorry, I couldn't understand that command.")
+                        self.memory.save_conversation(command, None, "Plan generation failed", False)
+                        continue
+                    
+                    self._log("Used LLM planner", "system")
+                else:
+                    self._log("Used rule-based parser", "system")
 
                 plan_json = json.dumps(plan, indent=2)
                 self._log_plan(plan_json)
+
+                # Phase 5: Validate plan schema and complexity
+                is_valid, error, complexity, concerns = self.validator.validate(plan)
+                if not is_valid:
+                    self._log(f"Invalid plan: {error}", "system")
+                    self.tts.speak_async("I generated an invalid plan. Please try again.")
+                    self.memory.save_conversation(command, plan_json, f"Invalid plan: {error}", False)
+                    continue
+                
+                if concerns:
+                    self._log(f"Complexity concerns: {', '.join(concerns)}", "system")
+                
+                # Sanitize dangerous actions
+                plan = self.validator.sanitize_plan(plan)
 
                 # Handle clarification requests
                 if plan["task_type"] == "clarify":
@@ -140,7 +175,7 @@ class Orchestrator:
                     self.memory.save_conversation(command, plan_json, "Clarification requested", True)
                     continue
 
-                # Phase 5: Safety validation
+                # Phase 6: Safety validation
                 validation = self.safety.validate_plan(plan)
 
                 if not validation["approved"]:
@@ -150,8 +185,14 @@ class Orchestrator:
                     self.memory.save_conversation(command, plan_json, msg, False)
                     continue
 
-                # Phase 6: Confirmation (if needed)
-                if validation["needs_confirmation"]:
+                # Phase 7: Confirmation (if needed)
+                # Check both safety validator and dangerous actions whitelist
+                needs_confirmation = validation["needs_confirmation"]
+                if config.REQUIRE_CONFIRMATION_FOR_DANGEROUS and not needs_confirmation:
+                    # Double-check dangerous actions
+                    needs_confirmation = requires_confirmation(plan)
+                
+                if needs_confirmation:
                     confirm_msg = self.safety.format_confirmation_message(plan, validation)
                     self._log("Waiting for confirmation...", "system")
                     self.tts.speak_async("This action requires your approval. Please check the screen.")
@@ -171,7 +212,7 @@ class Orchestrator:
                         self.memory.save_conversation(command, plan_json, "User denied", False)
                         continue
 
-                # Phase 7: Execute
+                # Phase 8: Execute
                 self._set_status("executing")
                 self._log("Executing plan...", "system")
 
@@ -190,7 +231,7 @@ class Orchestrator:
                         result.get("message", ""),
                     )
 
-                # Phase 8: Respond with intelligent feedback
+                # Phase 9: Respond with intelligent feedback
                 if all_success:
                     self._log("All actions completed successfully.", "max")
                     # Provide specific feedback based on action types

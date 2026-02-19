@@ -38,7 +38,7 @@ class AudioCapture:
     def _init_vad(self):
         """Initialize WebRTC VAD."""
         try:
-            import webrtcvad
+            import webrtcvad  # type: ignore[import-untyped]
             self._vad = webrtcvad.Vad(2)  # aggressiveness 0-3
             logger.info("WebRTC VAD initialized (aggressiveness=2)")
         except ImportError:

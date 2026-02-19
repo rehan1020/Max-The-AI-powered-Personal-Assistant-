@@ -90,5 +90,26 @@ SAFE_ACTIONS = {
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_FILE = LOGS_DIR / "max.log"
 
+# ── Safety & Control ──────────────────────────────────────────────────────
+# If True, only use rule-based parser, do NOT use LLM for complex tasks
+SIMPLE_COMMANDS_ONLY = os.getenv("SIMPLE_COMMANDS_ONLY", "false").lower() == "true"
+
+# If True, require confirmation for ALL dangerous actions
+REQUIRE_CONFIRMATION_FOR_DANGEROUS = os.getenv("REQUIRE_CONFIRMATION_FOR_DANGEROUS", "true").lower() == "true"
+
+# If True, reject complex multi-step plans
+REJECT_COMPLEX_PLANS = os.getenv("REJECT_COMPLEX_PLANS", "false").lower() == "true"
+
+# Maximum number of actions allowed in a single plan
+MAX_ACTIONS_PER_PLAN = int(os.getenv("MAX_ACTIONS_PER_PLAN", "10"))
+
+# Actions that always require confirmation (whitelist enforcement)
+DANGEROUS_ACTIONS_WHITELIST = {
+    "install_software",
+    "file_delete",
+    "system_shutdown",
+    "system_restart",
+}
+
 # ── Allowed Action Types ───────────────────────────────────────────────────
 ALL_ACTION_TYPES = SAFE_ACTIONS | DANGEROUS_ACTIONS
