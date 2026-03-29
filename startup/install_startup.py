@@ -4,12 +4,11 @@ Adds Max to Windows startup by creating a shortcut in the shell:startup folder,
 or by adding a registry entry.
 """
 
-import logging
 import os
 import sys
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
+from core.logger import logger
 
 STARTUP_FOLDER = Path(os.environ.get("APPDATA", "")) / r"Microsoft\Windows\Start Menu\Programs\Startup"
 SHORTCUT_NAME = "Max AI Agent.lnk"

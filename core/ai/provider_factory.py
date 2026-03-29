@@ -9,13 +9,11 @@ Also provides a FallbackProvider that wraps both and retries on the
 secondary provider when the primary one fails.
 """
 
-import logging
 from typing import Optional
 
 import config
+from core.logger import logger
 from core.ai.llm_provider import LLMProvider
-
-logger = logging.getLogger(__name__)
 
 
 class FallbackProvider(LLMProvider):

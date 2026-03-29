@@ -4,14 +4,12 @@ All operations respect the protected paths list from config.
 Max CANNOT modify its own project directory.
 """
 
-import logging
 import os
 import shutil
 from pathlib import Path
 
 import config
-
-logger = logging.getLogger(__name__)
+from core.logger import logger
 
 
 def _is_protected(path_str: str) -> bool:

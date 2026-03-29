@@ -5,10 +5,10 @@ Detects complexity and validates action safety.
 """
 
 import json
-import logging
+import json
 from typing import Optional, List, Dict, Any
 
-logger = logging.getLogger(__name__)
+from core.logger import logger
 
 # Allowed action types
 ALLOWED_ACTIONS = {

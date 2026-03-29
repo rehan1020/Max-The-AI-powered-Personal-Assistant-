@@ -5,18 +5,16 @@ to generate structured JSON action plans — fully offline, no API keys.
 """
 
 import json
-import logging
 import time
-from typing import Optional
+from typing import AsyncGenerator, Optional
 
 import httpx
 
 import config
+from core.logger import logger
 from core.ai.llm_provider import LLMProvider
 from core.ai.prompt import build_prompt_with_context
 from core.ai.schema import validate_action_plan
-
-logger = logging.getLogger(__name__)
 
 
 class OllamaProvider(LLMProvider):
@@ -117,6 +115,58 @@ class OllamaProvider(LLMProvider):
 
         logger.error("All Ollama attempts failed")
         return None
+
+    async def stream_plan(
+        self,
+        user_text: str,
+        recent_conversations: list[dict] = None,
+    ) -> AsyncGenerator[str, None]:
+        """Stream the LLM response as an async generator.
+        
+        Args:
+            user_text: The user's voice command (transcribed).
+            recent_conversations: Recent history for context.
+            
+        Yields:
+            Tokens as they arrive from the LLM.
+        """
+        messages = build_prompt_with_context(recent_conversations)
+        messages.append({"role": "user", "content": user_text})
+
+        try:
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                async with client.stream(
+                    "POST",
+                    f"{self.base_url}/api/chat",
+                    json={
+                        "model": self.model,
+                        "messages": messages,
+                        "stream": True,
+                        "format": "json",
+                        "options": {
+                            "temperature": 0,
+                            "num_ctx": self.num_ctx,
+                            "num_gpu": 99,
+                        },
+                    },
+                ) as response:
+                    if response.status_code != 200:
+                        logger.error(f"Ollama stream error {response.status_code}")
+                        return
+
+                    async for line in response.aiter_lines():
+                        if not line.strip():
+                            continue
+                        try:
+                            data = json.loads(line)
+                            token = data.get("message", {}).get("content", "")
+                            if token:
+                                yield token
+                        except json.JSONDecodeError:
+                            continue
+
+        except Exception as e:
+            logger.error(f"Ollama stream failed: {e}")
 
     # ── Cleanup ───────────────────────────────────────────────────────────
 

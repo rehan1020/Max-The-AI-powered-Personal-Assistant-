@@ -1,14 +1,12 @@
 """Text-to-Speech using pyttsx3 (offline, Windows voices)."""
 
-import logging
 import threading
 from typing import Optional
 
 import pyttsx3
 
 import config
-
-logger = logging.getLogger(__name__)
+from core.logger import logger
 
 
 class TextToSpeech:

@@ -7,7 +7,6 @@ Flow:
 """
 
 import json
-import logging
 import threading
 import time
 from typing import Optional
@@ -15,6 +14,7 @@ from typing import Optional
 import numpy as np
 
 import config
+from core.logger import logger
 from core.voice.audio_capture import AudioCapture
 from core.voice.hotword import HotwordDetector
 from core.voice.stt import SpeechToText
@@ -23,11 +23,10 @@ from core.ai.provider_factory import create_llm_provider
 from core.ai.rule_parser import parse_simple_command
 from core.ai.plan_validator import PlanValidator, requires_confirmation
 from core.ai.schema import plan_to_json
+from core.ai.response_cache import ResponseCache
 from core.safety.validator import SafetyValidator
 from core.execution.dispatcher import ActionDispatcher
 from core.memory.database import MemoryDatabase
-
-logger = logging.getLogger(__name__)
 
 
 class Orchestrator:
@@ -53,6 +52,14 @@ class Orchestrator:
         # Plan validation & safety
         self.validator = PlanValidator(strict_mode=config.REJECT_COMPLEX_PLANS)
         logger.info(f"Safety mode: SIMPLE_ONLY={config.SIMPLE_COMMANDS_ONLY}, REJECT_COMPLEX={config.REJECT_COMPLEX_PLANS}")
+
+        # Response cache
+        if config.RESPONSE_CACHE_ENABLED:
+            cache_path = config.DATA_DIR / "response_cache.json"
+            self.cache = ResponseCache(cache_path, ttl=config.RESPONSE_CACHE_TTL)
+            logger.info("Response cache enabled")
+        else:
+            self.cache = None
 
         logger.info("All subsystems initialized")
 
@@ -137,15 +144,32 @@ class Orchestrator:
                         continue
                     
                     self._set_status("processing", "Thinking...")
-                    recent = self.memory.get_recent_conversations(limit=5)
-                    plan = self.ai.plan(command, recent)
-                    
+
+                    # Check cache before calling LLM
+                    if self.cache:
+                        plan = self.cache.get(command)
+                        if plan:
+                            self._log("Used cached plan", "system")
+
                     if plan is None:
-                        self._log("Failed to generate action plan.", "system")
-                        self.tts.speak_async("Sorry, I couldn't understand that command.")
-                        self.memory.save_conversation(command, None, "Plan generation failed", False)
-                        continue
-                    
+                        recent = self.memory.get_recent_conversations(limit=5)
+                        plan = self.ai.plan(command, recent)
+
+                        if plan is None:
+                            self._log("Failed to generate action plan.", "system")
+                            self.tts.speak_async("Sorry, I couldn't understand that command.")
+                            self.memory.save_conversation(command, None, "Plan generation failed", False)
+                            continue
+
+                        # Cache the plan (only simple, non-dangerous plans)
+                        if self.cache:
+                            has_dangerous = any(
+                                a.get("type") in config.DANGEROUS_ACTIONS
+                                for a in plan.get("actions", [])
+                            )
+                            if not has_dangerous and len(plan.get("actions", [])) <= 2:
+                                self.cache.set(command, plan)
+
                     self._log("Used LLM planner", "system")
                 else:
                     self._log("Used rule-based parser", "system")
@@ -235,14 +259,22 @@ class Orchestrator:
                 if all_success:
                     self._log("All actions completed successfully.", "max")
                     # Provide specific feedback based on action types
-                    action_types = [r.get("action_type") for r in results]
-                    feedback = self._generate_feedback(action_types)
-                    self.tts.speak_async(feedback)
+                    try:
+                        action_types = [r.get("action_type") for r in results]
+                        feedback = self._generate_feedback(action_types)
+                        logger.info(f"Speaking feedback: '{feedback}'")
+                        self.tts.speak_async(feedback)
+                    except Exception as e:
+                        logger.error(f"Failed to generate/speak feedback: {e}")
+                        self.tts.speak_async("Done.")
                 else:
                     failed = [r for r in results if not r.get("success")]
                     msg = f"Completed with {len(failed)} error(s)."
                     self._log(msg, "max")
-                    self.tts.speak_async(msg)
+                    try:
+                        self.tts.speak_async(msg)
+                    except Exception as e:
+                        logger.error(f"Failed to speak error feedback: {e}")
 
                 # Phase 9: Save to memory
                 result_json = json.dumps(results, default=str)

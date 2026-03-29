@@ -1,0 +1,6 @@
+# Windows requirements
+-r requirements-base.txt
+pycaw>=20230407
+pywin32>=306
+comtypes>=1.2.0
+win10toast>=0.9

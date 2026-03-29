@@ -4,15 +4,13 @@ Classifies actions as SAFE or DANGEROUS, enforces protected paths,
 blocks self-modification, and manages confirmation requirements.
 """
 
-import logging
 import re
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
 
 import config
-
-logger = logging.getLogger(__name__)
+from core.logger import logger
 
 
 # Blocked URL patterns (phishing, malware, etc.)

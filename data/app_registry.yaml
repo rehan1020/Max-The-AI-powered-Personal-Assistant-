@@ -1,0 +1,243 @@
+# App registry — maps friendly names to OS-specific launch commands
+# Keys are lowercase. Aliases are listed under each entry.
+# Commands are resolved dynamically via shutil.which() + OS-specific fallbacks.
+# NO hardcoded absolute paths — the system discovers them at runtime.
+
+chrome:
+  aliases: [google chrome, browser]
+  windows: ["chrome"]
+  windows_search: ["chrome", "google-chrome", "chrome.exe"]
+  macos: ["open", "-a", "Google Chrome"]
+  linux: ["google-chrome"]
+  linux_fallbacks: ["google-chrome-stable", "chromium", "chromium-browser"]
+
+firefox:
+  aliases: [mozilla firefox]
+  windows: ["firefox"]
+  windows_search: ["firefox", "firefox.exe"]
+  macos: ["open", "-a", "Firefox"]
+  linux: ["firefox"]
+
+vscode:
+  aliases: [visual studio code, code editor, vs code]
+  windows: ["code"]
+  windows_search: ["code", "code.cmd"]
+  macos: ["open", "-a", "Visual Studio Code"]
+  linux: ["code"]
+
+notepad:
+  aliases: [text editor, notes]
+  windows: ["notepad"]
+  windows_search: ["notepad", "notepad.exe"]
+  macos: ["open", "-a", "TextEdit"]
+  linux: ["gedit", "kate", "mousepad", "xed"]
+
+terminal:
+  aliases: [console, command prompt, cmd, shell]
+  windows: ["wt"]
+  windows_search: ["wt", "wt.exe", "cmd.exe"]
+  windows_fallback: ["cmd"]
+  macos: ["open", "-a", "Terminal"]
+  linux: ["gnome-terminal", "konsole", "xterm", "xfce4-terminal"]
+
+calculator:
+  aliases: [calc]
+  windows: ["calc"]
+  windows_search: ["calc", "calc.exe"]
+  macos: ["open", "-a", "Calculator"]
+  linux: ["gnome-calculator", "kcalc", "galculator"]
+
+file_manager:
+  aliases: [explorer, finder, files, file browser]
+  windows: ["explorer"]
+  windows_search: ["explorer", "explorer.exe"]
+  macos: ["open", "-a", "Finder"]
+  linux: ["nautilus", "dolphin", "thunar", "nemo"]
+
+spotify:
+  aliases: [music]
+  windows: ["spotify"]
+  windows_search: ["spotify", "spotify.exe"]
+  macos: ["open", "-a", "Spotify"]
+  linux: ["spotify"]
+
+discord:
+  aliases: []
+  windows: ["discord"]
+  windows_search: ["discord", "discord.exe", "Update.exe --processStart Discord.exe"]
+  macos: ["open", "-a", "Discord"]
+  linux: ["discord"]
+
+vlc:
+  aliases: [media player, video player]
+  windows: ["vlc"]
+  windows_search: ["vlc", "vlc.exe"]
+  macos: ["open", "-a", "VLC"]
+  linux: ["vlc"]
+
+slack:
+  aliases: []
+  windows: ["slack"]
+  windows_search: ["slack", "slack.exe"]
+  macos: ["open", "-a", "Slack"]
+  linux: ["slack"]
+
+zoom:
+  aliases: [video conferencing]
+  windows: ["zoom"]
+  windows_search: ["zoom", "Zoom.exe"]
+  macos: ["open", "-a", "zoom.us"]
+  linux: ["zoom"]
+
+teams:
+  aliases: [microsoft teams]
+  windows: ["teams"]
+  windows_search: ["teams", "ms-teams", "Teams.exe"]
+  macos: ["open", "-a", "Microsoft Teams"]
+  linux: ["teams"]
+
+outlook:
+  aliases: [email]
+  windows: ["outlook"]
+  windows_search: ["outlook", "outlook.exe", "OUTLOOK.EXE"]
+  macos: ["open", "-a", "Microsoft Outlook"]
+  linux: ["thunderbird"]
+
+settings:
+  aliases: [preferences]
+  windows: ["ms-settings:"]
+  macos: ["open", "-a", "System Preferences"]
+  linux: ["gnome-control-center", "system-settings"]
+
+microsoft edge:
+  aliases: [edge]
+  windows: ["msedge"]
+  windows_search: ["msedge", "msedge.exe"]
+  macos: ["open", "-a", "Microsoft Edge"]
+  linux: ["microsoft-edge"]
+
+visual studio:
+  aliases: [vs]
+  windows: ["devenv"]
+  windows_search: ["devenv", "devenv.exe"]
+  macos: ["open", "-a", "Visual Studio"]
+  linux: ["code"]
+
+pycharm:
+  aliases: []
+  windows: ["pycharm"]
+  windows_search: ["pycharm", "pycharm64.exe", "pycharm.exe"]
+  macos: ["open", "-a", "PyCharm CE"]
+  linux: ["pycharm-community"]
+
+intellij:
+  aliases: []
+  windows: ["idea"]
+  windows_search: ["idea", "idea64.exe", "idea.exe"]
+  macos: ["open", "-a", "IntelliJ IDEA"]
+  linux: ["intellij-idea-community"]
+
+git:
+  aliases: [version control]
+  windows: ["git-bash"]
+  windows_search: ["git-bash", "git-bash.exe", "bash.exe"]
+  macos: ["open", "-a", "Terminal"]
+  linux: ["gitk"]
+
+postman:
+  aliases: [api testing]
+  windows: ["postman"]
+  windows_search: ["postman", "Postman.exe"]
+  macos: ["open", "-a", "Postman"]
+  linux: ["postman"]
+
+docker:
+  aliases: [containers]
+  windows: ["docker"]
+  windows_search: ["docker", "Docker Desktop.exe"]
+  macos: ["open", "-a", "Docker"]
+  linux: ["docker", "docker-compose"]
+
+obs:
+  aliases: [screen recording]
+  windows: ["obs64"]
+  windows_search: ["obs64", "obs64.exe", "obs-studio"]
+  macos: ["open", "-a", "OBS"]
+  linux: ["obs"]
+
+gimp:
+  aliases: [image editor]
+  windows: ["gimp"]
+  windows_search: ["gimp", "gimp-2.10.exe", "gimp.exe"]
+  macos: ["open", "-a", "GIMP"]
+  linux: ["gimp"]
+
+inkscape:
+  aliases: [vector graphics]
+  windows: ["inkscape"]
+  windows_search: ["inkscape", "inkscape.exe"]
+  macos: ["open", "-a", "Inkscape"]
+  linux: ["inkscape"]
+
+virtualbox:
+  aliases: [virtual machine, vm]
+  windows: ["virtualbox"]
+  windows_search: ["virtualbox", "VirtualBox.exe"]
+  macos: ["open", "-a", "VirtualBox"]
+  linux: ["virtualbox"]
+
+7zip:
+  aliases: [archive]
+  windows: ["7zFM"]
+  windows_search: ["7zFM", "7zFM.exe", "7z.exe"]
+  macos: ["open", "-a", "The Unarchiver"]
+  linux: ["file-roller", "ark"]
+
+steam:
+  aliases: [gaming]
+  windows: ["steam"]
+  windows_search: ["steam", "steam.exe"]
+  macos: ["open", "-a", "Steam"]
+  linux: ["steam"]
+
+whatsapp:
+  aliases: []
+  windows: ["whatsapp"]
+  windows_search: ["whatsapp", "WhatsApp.exe"]
+  macos: ["open", "-a", "WhatsApp"]
+  linux: ["whatsapp"]
+
+telegram:
+  aliases: []
+  windows: ["telegram"]
+  windows_search: ["telegram", "Telegram.exe"]
+  macos: ["open", "-a", "Telegram"]
+  linux: ["telegram-desktop"]
+
+paint:
+  aliases: [ms paint]
+  windows: ["mspaint"]
+  windows_search: ["mspaint", "mspaint.exe"]
+  macos: ["open", "-a", "Preview"]
+  linux: ["kolourpaint", "drawing"]
+
+powershell:
+  aliases: [pwsh]
+  windows: ["powershell"]
+  windows_search: ["powershell", "powershell.exe", "pwsh", "pwsh.exe"]
+  macos: ["pwsh"]
+  linux: ["pwsh"]
+
+cmd:
+  aliases: [command prompt]
+  windows: ["cmd"]
+  windows_search: ["cmd", "cmd.exe"]
+  macos: ["open", "-a", "Terminal"]
+  linux: ["bash"]
+
+task manager:
+  aliases: [taskmgr]
+  windows: ["taskmgr"]
+  windows_search: ["taskmgr", "Taskmgr.exe"]
+  macos: ["open", "-a", "Activity Monitor"]
+  linux: ["gnome-system-monitor", "xfce4-taskmanager"]

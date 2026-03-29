@@ -6,15 +6,13 @@ Tables:
 """
 
 import json
-import logging
 import sqlite3
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
 import config
-
-logger = logging.getLogger(__name__)
+from core.logger import logger
 
 
 class MemoryDatabase:

@@ -6,7 +6,6 @@ Uses a two-tier approach:
      to check if the wake word was spoken.
 """
 
-import logging
 import time
 import threading
 from typing import Callable, Optional
@@ -15,8 +14,7 @@ from pathlib import Path
 import numpy as np
 
 import config
-
-logger = logging.getLogger(__name__)
+from core.logger import logger
 
 
 class HotwordDetector:

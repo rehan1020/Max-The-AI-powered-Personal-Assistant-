@@ -4,7 +4,6 @@ Uses sounddevice for mic input and webrtcvad for speech detection.
 Produces audio chunks suitable for hotword detection and full transcription.
 """
 
-import logging
 import queue
 import struct
 import time
@@ -15,8 +14,7 @@ import numpy as np
 import sounddevice as sd
 
 import config
-
-logger = logging.getLogger(__name__)
+from core.logger import logger
 
 
 class AudioCapture:

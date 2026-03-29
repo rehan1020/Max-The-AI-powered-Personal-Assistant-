@@ -1,0 +1,4 @@
+# macOS requirements
+-r requirements-base.txt
+pyobjc-framework-Cocoa>=10.0
+pyobjc-framework-AVFoundation>=10.0

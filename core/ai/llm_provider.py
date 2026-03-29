@@ -5,7 +5,7 @@ This enables seamless switching between OpenRouter, Ollama, or any future backen
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import AsyncGenerator, Optional
 
 
 class LLMProvider(ABC):
@@ -27,6 +27,24 @@ class LLMProvider(ABC):
             Validated action plan dict, or None on failure.
         """
         raise NotImplementedError
+
+    async def stream_plan(
+        self,
+        user_text: str,
+        recent_conversations: list[dict] = None,
+    ) -> AsyncGenerator[str, None]:
+        """Stream the LLM response as an async generator.
+        
+        Override this method in subclasses to enable streaming.
+        
+        Args:
+            user_text: The user's voice command (transcribed).
+            recent_conversations: Recent history for context.
+            
+        Yields:
+            Tokens as they arrive from the LLM.
+        """
+        yield ""
 
     @abstractmethod
     def close(self):

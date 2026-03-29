@@ -5,18 +5,17 @@ Uses the free tier model by default.  Implements the LLMProvider interface.
 """
 
 import json
-import logging
+import json
 import time
-from typing import Optional
+from typing import AsyncGenerator, Optional
 
 import httpx
 
 import config
+from core.logger import logger
 from core.ai.llm_provider import LLMProvider
 from core.ai.prompt import build_prompt_with_context
 from core.ai.schema import validate_action_plan
-
-logger = logging.getLogger(__name__)
 
 OPENROUTER_CHAT_URL = f"{config.OPENROUTER_BASE_URL}/chat/completions"
 
@@ -104,6 +103,62 @@ class OpenRouterClient(LLMProvider):
 
         logger.error("All OpenRouter attempts failed")
         return None
+
+    async def stream_plan(
+        self,
+        user_text: str,
+        recent_conversations: list[dict] = None,
+    ) -> AsyncGenerator[str, None]:
+        """Stream the LLM response as an async generator.
+        
+        Args:
+            user_text: The user's voice command (transcribed).
+            recent_conversations: Recent history for context.
+            
+        Yields:
+            Tokens as they arrive from the LLM.
+        """
+        messages = build_prompt_with_context(recent_conversations)
+        messages.append({"role": "user", "content": user_text})
+
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                async with client.stream(
+                    "POST",
+                    OPENROUTER_CHAT_URL,
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json",
+                        "HTTP-Referer": "https://max-desktop-agent.local",
+                        "X-Title": "Max Desktop Agent",
+                    },
+                    json={
+                        "model": self.model,
+                        "messages": messages,
+                        "temperature": 0.1,
+                        "max_tokens": 1024,
+                        "stream": True,
+                    },
+                ) as response:
+                    if response.status_code != 200:
+                        logger.error(f"OpenRouter stream error {response.status_code}")
+                        return
+
+                    async for line in response.aiter_lines():
+                        if line.startswith("data: "):
+                            chunk = line[6:]
+                            if chunk == "[DONE]":
+                                break
+                            try:
+                                data = json.loads(chunk)
+                                token = data["choices"][0]["delta"].get("content", "")
+                                if token:
+                                    yield token
+                            except (json.JSONDecodeError, KeyError):
+                                continue
+
+        except Exception as e:
+            logger.error(f"OpenRouter stream failed: {e}")
 
     def close(self):
         """Close the HTTP client."""

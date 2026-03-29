@@ -6,18 +6,17 @@ NEVER executes raw AI output — only structured, validated actions.
 """
 
 import asyncio
-import logging
 import time
 from typing import Optional
 
 import config
+from core.logger import logger
 from core.execution.browser_control import BrowserController
 from core.execution import mouse_keyboard
 from core.execution import file_manager
 from core.execution import system_control
 from core.execution.screen_reader import ScreenReader
-
-logger = logging.getLogger(__name__)
+from core.execution.interrupt import INTERRUPT
 
 
 class ActionDispatcher:
@@ -114,6 +113,21 @@ class ActionDispatcher:
         logger.info(f"Executing plan: {plan['task_type']} with {len(actions)} actions")
 
         for i, action in enumerate(actions):
+            # Check for user interrupt before each action
+            try:
+                INTERRUPT.check()
+            except InterruptedError:
+                logger.info("Execution interrupted by user")
+                for j in range(i, len(actions)):
+                    results.append({
+                        "action_index": j,
+                        "action_type": actions[j]["type"],
+                        "success": False,
+                        "message": "Cancelled by user",
+                        "skipped": True,
+                    })
+                break
+
             if i in skip_indices:
                 results.append({
                     "action_index": i,

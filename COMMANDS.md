@@ -91,17 +91,44 @@ For Spotify specifically:
 - "Start screensaver"
 - "Turn off screensaver"
 
-## File Operations
+## Clipboard Operations
 
-**Create Files:**
-- "Create a file called notes.txt with content hello world"
-- "Create a new document at C:\Users\YourName\Desktop\test.txt"
+**Copy to Clipboard:**
+- "Copy 'hello world' to clipboard"
+- "Copy the text 'Meeting at 5' to my clipboard"
+- "Put 'Draft 1' on the clipboard"
 
-**Delete Files:**
-- "Delete the file C:\Users\YourName\Desktop\old.txt"
+**Paste from Clipboard:**
+- "Paste from clipboard" (Note: Max will simulate Ctrl+V)
 
-**Move Files:**
-- "Move C:\Users\YourName\Downloads\photo.jpg to C:\Users\YourName\Pictures\"
+**Clear Clipboard:**
+- "Clear the clipboard"
+- "Wipe my clipboard"
+
+## Notifications & Battery
+
+**Check Battery:**
+- "What's my battery level?"
+- "Check battery status"
+- "How much battery is left?"
+
+**Send Notifications:**
+- "Notify me when finished"
+- "Send a notification saying 'Task Completed'"
+- "Alert me with 'Dinner is ready'"
+
+## Startup & Installation
+
+**Auto-Startup:**
+- "Enable auto-startup" (Adds Max to Windows startup)
+- "Disable auto-startup"
+- "Check if startup is enabled"
+
+**Software Installation:**
+- "Install Visual Studio Code"
+- "Install Google Chrome"
+- "Install VLC Media Player"
+- (Uses `winget` behind the scenes; requires confirmation in Safe Mode)
 
 ## Important Tips
 

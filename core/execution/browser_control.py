@@ -4,7 +4,6 @@ Attaches to a real Chrome instance with user's profile, cookies, and sessions.
 Chrome is launched with --remote-debugging-port for visible automation.
 """
 
-import logging
 import subprocess
 import time
 import asyncio
@@ -12,8 +11,7 @@ from typing import Optional
 from pathlib import Path
 
 import config
-
-logger = logging.getLogger(__name__)
+from core.logger import logger
 
 
 class BrowserController:

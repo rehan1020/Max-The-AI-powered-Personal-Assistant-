@@ -4,6 +4,33 @@ This document describes the new safety and control improvements implemented base
 
 ---
 
+## 🛡️ Safety Layers
+
+Max implements a defense-in-depth strategy to ensure that AI-generated actions are safe for your system.
+
+### 1. Path Protection (Hardened)
+Max cannot touch sensitive system directories or its own source code. This is enforced at the `core/safety/validator.py` level.
+- **Protected Paths**: `C:\Windows`, `C:\Program Files`, and the project's own directory.
+- **Self-Modification Block**: AI attempts to edit `.py` files in the project root are automatically blocked.
+
+### 2. Action Classification
+Every action is categorized before execution:
+- **✅ SAFE**: (e.g., `open_app`, `navigate`, `read_screen`) Executed instantly.
+- **⚠️ DANGEROUS**: (e.g., `file_delete`, `install_software`, `system_shutdown`) Requires manual user confirmation in the GUI when **Safe Mode** is ON.
+- **🚫 BLOCKED**: (e.g., `eval()`, direct shell access) These are not supported by the dispatcher and will be rejected.
+
+### 3. URL & Key Validation
+- **URL Filtering**: Blocks `javascript:`, `data:`, and `file:///` protocols in browser commands.
+- **Restricted Keys**: Destructive combinations like `Alt+F4` or `Ctrl+Alt+Del` are flagged as dangerous.
+
+## ⚙️ Configuration
+
+You can tune safety settings in `config.py`:
+- `SAFE_MODE`: Default `True`. Toggle via GUI.
+- `PROTECTED_PATHS`: List of absolute paths that Max is forbidden from modifying.
+
+---
+
 ## 🏗️ Architecture Overview
 
 Max now uses a **multi-layer safety and control system**:

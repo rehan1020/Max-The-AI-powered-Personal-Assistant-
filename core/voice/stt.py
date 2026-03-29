@@ -4,14 +4,12 @@ Uses GPU (CUDA) by default for the RTX 2050.
 Model: small (configurable).
 """
 
-import logging
 from typing import Optional
 
 import numpy as np
 
 import config
-
-logger = logging.getLogger(__name__)
+from core.logger import logger
 
 
 class SpeechToText:
@@ -68,8 +66,6 @@ class SpeechToText:
                 vad_parameters=dict(
                     min_silence_duration_ms=300,  # More sensitive (was 500)
                     speech_pad_ms=100,  # Reduced padding (was 300)
-                    start_thresh=0.5,  # Lower threshold to catch speech start
-                    end_thresh=0.5,    # Lower threshold to catch speech end
                 ),
             )
 

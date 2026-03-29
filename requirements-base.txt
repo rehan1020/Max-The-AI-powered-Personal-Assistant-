@@ -1,0 +1,22 @@
+# Base requirements (all platforms)
+python-dotenv>=1.0.0
+httpx>=0.25.0
+PyQt6>=6.6.0
+pyautogui>=0.9.54
+pyperclip>=1.8.2
+mss>=9.0.0
+psutil>=5.9.0
+numpy>=1.24.0
+sounddevice>=0.4.6
+playwright>=1.40.0
+easyocr>=1.7.0
+Pillow>=10.0.0
+faster-whisper>=1.0.0
+pyyaml>=6.0
+loguru>=0.7.0
+plyer>=2.1.0
+pyttsx3>=2.90
+webrtcvad>=2.0.10
+openwakeword>=0.6.0
+screen-brightness-control>=0.22.0
+chromadb>=0.4.0

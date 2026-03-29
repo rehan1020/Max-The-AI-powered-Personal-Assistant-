@@ -4,13 +4,12 @@ Used as fallback when DOM-based browser automation isn't possible,
 and for desktop-level interactions.
 """
 
-import logging
 import time
 from typing import Optional
 
 import pyautogui
 
-logger = logging.getLogger(__name__)
+from core.logger import logger
 
 # Safety settings
 pyautogui.FAILSAFE = True       # Move mouse to corner to abort

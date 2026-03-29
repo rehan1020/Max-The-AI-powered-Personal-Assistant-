@@ -5,13 +5,12 @@ Can also send screenshots to OpenRouter for visual understanding.
 """
 
 import io
-import logging
 import base64
 from typing import Optional
 
 import numpy as np
 
-logger = logging.getLogger(__name__)
+from core.logger import logger
 
 
 class ScreenReader:
