@@ -11,10 +11,6 @@
 </p>
 
 ---
-## UPDATE
-
-v2 brings a lot of new things soon.
----
 
 **Max** is a high-performance, full-featured AI-powered Windows orchestration engine with a voice interface. It transforms your desktop into an intelligent assistant that listens for the wake word **"Max"**, converts natural language into structured action plans using **Ollama (local)** or **OpenRouter (cloud)**, and executes them with precision — from browser automation to deep system control.
 
