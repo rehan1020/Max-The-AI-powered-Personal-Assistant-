@@ -1,85 +1,68 @@
-# Platform-Specific Notes
+# 🌍 Multi-Platform Notes
 
-This document covers platform-specific limitations and requirements for Max AI Agent.
+> [!WARNING]
+> **Linux and macOS support is currently in BETA / EXPERIMENTAL.**
+> These platforms have not been as extensively tested as Windows. Expect bugs and please report them!
 
-## Windows
+## 🪟 Windows (Stable)
 
-- **Brightness Control**: Uses `screen-brightness-control` library
-- **Volume Control**: Uses `pycaw` library (requires Windows Audio API)
-- **App Launching**: Supports Windows Store (UWP) apps via PowerShell
-- **Startup**: Uses Windows Registry or Start Menu shortcuts
+- **Brightness**: Uses `screen-brightness-control`.
+- **Volume**: Uses `pycaw`.
+- **App Management**: Supports Win32 and UWP (Windows Store) apps via PowerShell.
+- **Startup**: Managed via the Windows Registry.
 
-## macOS
+## 🍎 macOS (Beta - MacBooks)
 
-- **Brightness Control**: Requires `brightness` CLI tool
-  - Install with: `brew install brightness`
-- **Volume Control**: Uses `osascript` (AppleScript)
-- **Bluetooth Control**: Requires `blueutil` CLI tool
-  - Install with: `brew install blueutil`
-- **Startup**: Uses LaunchAgents plist file
-- **Notifications**: Uses native macOS notification center via `plyer`
+- **Requirement**: Desktop automation on macOS requires `Accessibility` and `Microphone` permissions.
+- **Brightness**: Requires `brightness` CLI (`brew install brightness`).
+- **Volume**: Native control via `osascript` (AppleScript).
+- **Bluetooth**: Requires `blueutil` (`brew install blueutil`).
+- **Package Manager**: Supports `Homebrew` for software installation commands.
+- **Startup**: Uses `LaunchAgents` plist files.
+- **Clipboard**: Native `pbcopy` and `pbpaste`.
 
-## Linux
+## 🐧 Linux (Experimental)
 
-### Ubuntu/Debian
+### Requirements
+Max assumes a standard desktop environment (GNOME, KDE, etc.) with the following tools installed:
+- **Audio**: `pulseaudio-utils` (for `pactl`) or `alsa-utils`.
+- **Network**: `NetworkManager` (for `nmcli`).
+- **Notifications**: `libnotify-bin` (for `notify-send`).
+- **Clipboard**: `xclip` or `xsel`.
 
-- **Brightness Control**: Uses `xrandr` for X11, or `brightnessctl` for Wayland
-- **Volume Control**: Uses PulseAudio (`pactl`) or ALSA (`amixer`)
-- **Notifications**: Uses `notify-send` or `plyer`
-- **Clipboard**: Uses `xclip` or `xsel` (X11), `wl-clipboard` (Wayland)
+### Wayland Support
+For modern distros using Wayland (e.g., Ubuntu 22.04+ default):
+- Brightness requires `brightnessctl`.
+- Clipboard requires `wl-clipboard`.
+- Global hotkeys and mouse automation may have limited functionality compared to X11.
 
-### Fedora/RHEL
+---
 
-- Same as Ubuntu/Debian but uses `dnf` for package management
+## 📋 Dependency Comparison
 
-### Arch Linux
+| Feature | Windows | macOS | Linux |
+|---------|---------|-------|-------|
+| **Volume** | `pycaw` | `osascript` | `pactl` / `amixer` |
+| **Brightness** | `sbc` | `brightness` (brew) | `xrandr` / `brightnessctl` |
+| **WiFi** | Native | `networksetup` | `nmcli` |
+| **Bluetooth** | Native | `blueutil` (brew) | `rfkill` |
+| **Apps** | PowerShell/Registry| `open` / `pkill` | `xdg-open` / `pkill` |
+| **Install** | `winget` | `brew` | `apt` / `dnf` / `pacman` |
 
-- Same as Ubuntu/Debian but uses `pacman` for package management
+---
 
-### Wayland Specific
+## 🛠️ Troubleshooting
 
-- Some mouse/keyboard automation may require `ydotool` instead of `xdotool`
-- Screen brightness may require `brightnessctl`
-- Clipboard requires `wl-clipboard`
+### macOS Permission Issues
+If Max fails to type or click on macOS:
+1. Go to **System Settings** > **Privacy & Security**.
+2. Under **Accessibility**, ensure your terminal (or Python) is allowed.
+3. Under **Microphone**, ensure access is granted.
 
-## Common Requirements
+### Linux Audio (No Sound)
+1. Ensure your user is in the `audio` group: `sudo usermod -aG audio $USER`.
+2. Verify `pactl info` runs without errors in your terminal.
 
-### System Dependencies
-
-| Dependency | Windows | macOS | Linux |
-|------------|---------|-------|-------|
-| Python | 3.11+ | 3.11+ | 3.11+ |
-| Chrome/Chromium | Required | Required | Required |
-| Audio drivers | Built-in | Built-in | ALSA/PulseAudio |
-
-### Optional Dependencies
-
-| Tool | Purpose | Install Command |
-|------|---------|-----------------|
-| Ollama | Local LLM | See [ollama.ai](https://ollama.ai) |
-| Playwright | Browser automation | `playwright install chromium` |
-
-## Troubleshooting
-
-### Microphone Not Detected
-
-1. Check system permissions for microphone access
-2. On Windows: Settings > Privacy > Microphone
-3. On macOS: System Preferences > Security & Privacy > Privacy > Microphone
-4. On Linux: Check PulseAudio/PipeWire configuration
-
-### Chrome Not Launching
-
-1. Verify Chrome is installed in the default location
-2. Or set `CHROME_PATH` in `.env` to the correct path
-
-### Voice Commands Not Working
-
-1. Check microphone is selected in system settings
-2. Verify audio input device is not muted
-3. Check `WHISPER_MODEL` and `WHISPER_DEVICE` in `.env`
-
-### System Controls Not Working
-
-- Some system controls require administrator/root privileges
-- On Linux, some commands require `sudo` (not supported by Max)
+### Screen Capture Black Screen
+- On **Wayland (Linux)**, standard screen capture might return a black screen for security reasons. You may need to switch to an X11 session or configure PipeWire sharing.
+- On **macOS**, ensure "Screen Recording" permission is granted in System Settings.

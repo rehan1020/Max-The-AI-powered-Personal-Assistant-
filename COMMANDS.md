@@ -91,6 +91,18 @@ For Spotify specifically:
 - "Start screensaver"
 - "Turn off screensaver"
 
+## File Operations
+
+**Create Files:**
+- "Create a file called notes.txt with content 'Fix the bug'"
+- "Create a new document at ~/Desktop/test.txt"
+
+**Delete Files:**
+- "Delete the file ~/Desktop/old.txt"
+
+**Move Files:**
+- "Move ~/Downloads/photo.jpg to ~/Pictures/"
+
 ## Clipboard Operations
 
 **Copy to Clipboard:**
@@ -132,13 +144,10 @@ For Spotify specifically:
 
 ## Important Tips
 
-1. **Be specific with app names** - "Open WhatsApp" works better than "Open that app"
-2. **Use common names** - If an app has a short name, use it:
-   - "Open VS Code" not "Open Visual Studio Code"
-   - "Open Notepad" not "Open the text editor"
-   - "Open Calc" or "Open Calculator" both work
-3. **For multi-step tasks, speak clearly** - Max understanding depends on speech recognition quality
-4. **Commands are case-insensitive** - "OPEN WHATSAPP", "open whatsapp", "Open WhatsApp" all work
+1. **Be specific with app names** - "Open WhatsApp" works better than "Open that app".
+2. **Cross-Platform Install** - When you say "Install XYZ", Max will use **Winget** on Windows, **Homebrew** on macOS, and **APT/DNF/Pacman** on Linux.
+3. **Paths** - You can use absolute paths or relative paths (like `~/Documents` for your home folder).
+4. **Commands are case-insensitive** - "OPEN WHATSAPP", "open whatsapp", "Open WhatsApp" all work.
 
 ## Examples of Multi-Step Commands
 
